@@ -14,6 +14,17 @@ void Line::Draw(HDC hdc) {
         } else if (algorithm == LineAlgorithm::Bresenham) {
             color = RGB(0, 0, 255);  // Bresenham - 蓝色
         }
+        
+        // 如果被选中，使用更粗的线条
+        if (isSelected) {
+            HPEN hPen = CreatePen(PS_SOLID, 3, RGB(255, 0, 255)); // 紫红色高亮
+            HPEN hOldPen = (HPEN)SelectObject(hdc, hPen);
+            MoveToEx(hdc, start.x, start.y, NULL);
+            LineTo(hdc, end.x, end.y);
+            SelectObject(hdc, hOldPen);
+            DeleteObject(hPen);
+        }
+        
         DrawingAlgorithm::DrawLine(hdc, start.x, start.y, end.x, end.y, algorithm, color);
     }
 }
@@ -76,6 +87,20 @@ void Circle::Draw(HDC hdc) {
         } else if (algorithm == CircleAlgorithm::Bresenham) {
             color = RGB(0, 0, 255);  // Bresenham - 蓝色
         }
+        
+        // 如果被选中，绘制高亮边框
+        if (isSelected) {
+            HPEN hPen = CreatePen(PS_SOLID, 3, RGB(255, 0, 255));
+            HPEN hOldPen = (HPEN)SelectObject(hdc, hPen);
+            HBRUSH hBrush = (HBRUSH)GetStockObject(NULL_BRUSH);
+            HBRUSH hOldBrush = (HBRUSH)SelectObject(hdc, hBrush);
+            Ellipse(hdc, center.x - radius, center.y - radius, 
+                         center.x + radius, center.y + radius);
+            SelectObject(hdc, hOldPen);
+            SelectObject(hdc, hOldBrush);
+            DeleteObject(hPen);
+        }
+        
         DrawingAlgorithm::DrawCircle(hdc, center.x, center.y, radius, algorithm, color);
     }
 }
@@ -136,7 +161,9 @@ Rectangle::Rectangle() : hasFirstPoint(false), complete(false), topLeft(0, 0), b
 
 void Rectangle::Draw(HDC hdc) {
     if (complete) {
-        HPEN hPen = CreatePen(PS_SOLID, 1, RGB(0, 0, 0));
+        int penWidth = isSelected ? 3 : 1;
+        COLORREF penColor = isSelected ? RGB(255, 0, 255) : RGB(0, 0, 0);
+        HPEN hPen = CreatePen(PS_SOLID, penWidth, penColor);
         HPEN hOldPen = (HPEN)SelectObject(hdc, hPen);
         HBRUSH hBrush = (HBRUSH)GetStockObject(NULL_BRUSH);
         HBRUSH hOldBrush = (HBRUSH)SelectObject(hdc, hBrush);
@@ -197,7 +224,9 @@ Polyline::Polyline() : closed(false) {}
 void Polyline::Draw(HDC hdc) {
     if (points.size() < 2) return;
 
-    HPEN hPen = CreatePen(PS_SOLID, 1, RGB(0, 0, 0));
+    int penWidth = isSelected ? 3 : 1;
+    COLORREF penColor = isSelected ? RGB(255, 0, 255) : RGB(0, 0, 0);
+    HPEN hPen = CreatePen(PS_SOLID, penWidth, penColor);
     HPEN hOldPen = (HPEN)SelectObject(hdc, hPen);
 
     for (size_t i = 0; i < points.size() - 1; i++) {
@@ -520,9 +549,10 @@ void Circle::Rotate(double angleRad, const Point& rotateCenter) {
 bool Circle::HitTest(const Point& p, int tolerance) const {
     if (!complete) return false;
     
-    // 点击圆周附近
+    // 点击圆周附近或圆内部
     double distance = p.DistanceTo(center);
-    return abs(distance - radius) <= tolerance;
+    // 在圆周附近或在圆内部都算选中
+    return (abs(distance - radius) <= tolerance) || (distance <= radius);
 }
 
 // ==================== Rectangle 类变换实现 ====================
@@ -561,7 +591,10 @@ bool Rectangle::HitTest(const Point& p, int tolerance) const {
     bool nearTop = abs(p.y - top) <= tolerance && p.x >= left - tolerance && p.x <= right + tolerance;
     bool nearBottom = abs(p.y - bottom) <= tolerance && p.x >= left - tolerance && p.x <= right + tolerance;
     
-    return nearLeft || nearRight || nearTop || nearBottom;
+    // 检查是否在矩形内部
+    bool inside = (p.x >= left && p.x <= right && p.y >= top && p.y <= bottom);
+    
+    return nearLeft || nearRight || nearTop || nearBottom || inside;
 }
 
 // ==================== Polyline 类变换实现 ====================
@@ -611,7 +644,22 @@ bool Polyline::HitTest(const Point& p, int tolerance) const {
     if (closed && points.size() >= 2) {
         Line tempLine;
         tempLine.SetEndpoints(points.back(), points.front());
-        return tempLine.HitTest(p, tolerance);
+        if (tempLine.HitTest(p, tolerance)) {
+            return true;
+        }
+    }
+    
+    // 如果多段线已闭合，使用射线法检查是否在内部
+    if (closed && points.size() >= 3) {
+        bool inside = false;
+        for (size_t i = 0, j = points.size() - 1; i < points.size(); j = i++) {
+            if (((points[i].y > p.y) != (points[j].y > p.y)) &&
+                (p.x < (points[j].x - points[i].x) * (p.y - points[i].y) / 
+                       (points[j].y - points[i].y) + points[i].x)) {
+                inside = !inside;
+            }
+        }
+        if (inside) return true;
     }
     
     return false;

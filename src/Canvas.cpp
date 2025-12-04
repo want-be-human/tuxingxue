@@ -13,12 +13,18 @@ void Canvas::SetDrawMode(DrawMode mode) {
     currentMode = mode;
     currentShape.reset();
     isDrawing = false;
-    // 清理变换状态
-    isDragging = false;
-    hasTransformAnchor = false;
-    // 如果不是选择模式，清除选中状态
-    if (mode != DrawMode::Select && mode != DrawMode::Translate && 
-        mode != DrawMode::Scale && mode != DrawMode::Rotate) {
+    
+    // 只在切换到绘图模式时清理变换状态
+    if (mode != DrawMode::Translate && mode != DrawMode::Scale && 
+        mode != DrawMode::Rotate && mode != DrawMode::SetClipWindow) {
+        isDragging = false;
+        hasTransformAnchor = false;
+    }
+    
+    // 只在切换到普通绘图模式时清除选中状态
+    if (mode != DrawMode::Translate && 
+        mode != DrawMode::Scale && mode != DrawMode::Rotate &&
+        !isSelectMode) {  // 填充选择模式下不清除
         ClearSelection();
     }
 }
@@ -29,12 +35,6 @@ DrawMode Canvas::GetDrawMode() const {
 
 void Canvas::OnMouseLeftDown(int x, int y) {
     Point p(x, y);
-    
-    // 处理选择模式
-    if (currentMode == DrawMode::Select) {
-        SelectShapeAt(p);
-        return;
-    }
     
     // 处理平移模式
     if (currentMode == DrawMode::Translate) {
@@ -143,7 +143,7 @@ void Canvas::OnMouseLeftDown(int x, int y) {
         SelectShapeAtPoint(x, y);
         FillSelectedShape();
         isSelectMode = false;
-        selectedShapeIndex = -1;
+        // 不重置selectedShapeIndex，让填充后的图形保持可选
         return;
     }
     

@@ -30,7 +30,7 @@ extern HWND g_hMainWnd;
 #define ID_POLYGON          6001   // 任意多边形
 
 // 图形选择与变换
-#define ID_SELECT           7001   // 选择图形
+// #define ID_SELECT           7001   // 选择图形（已集成到变换操作中）
 #define ID_TRANSLATE        7002   // 平移
 #define ID_SCALE            7003   // 缩放
 #define ID_ROTATE           7004   // 旋转

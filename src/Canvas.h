@@ -20,7 +20,6 @@ enum class DrawMode {
     BSpline,
     // 实验二新增
     Polygon,           // 任意多边形
-    Select,            // 选择模式
     Translate,         // 平移模式
     Scale,             // 缩放模式
     Rotate,            // 旋转模式

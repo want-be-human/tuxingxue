@@ -58,8 +58,6 @@ HMENU CreateMainMenu() {
     AppendMenuW(hMenu, MF_POPUP, (UINT_PTR)hFillMenu, L"填充");
     
     // 变换菜单
-    AppendMenuW(hTransformMenu, MF_STRING, ID_SELECT, L"选择图形");
-    AppendMenuW(hTransformMenu, MF_SEPARATOR, 0, NULL);
     AppendMenuW(hTransformMenu, MF_STRING, ID_TRANSLATE, L"平移");
     AppendMenuW(hTransformMenu, MF_STRING, ID_SCALE, L"缩放");
     AppendMenuW(hTransformMenu, MF_STRING, ID_ROTATE, L"旋转");
@@ -149,12 +147,6 @@ void HandleCommand(WPARAM wParam) {
     case ID_POLYGON:
         g_canvas.SetDrawMode(DrawMode::Polygon);
         MessageBox(g_hMainWnd, L"左键点击绘制顶点，右键完成多边形", L"绘制多边形", MB_OK | MB_ICONINFORMATION);
-        break;
-    
-    // 选择图形
-    case ID_SELECT:
-        g_canvas.SetDrawMode(DrawMode::Select);
-        MessageBox(g_hMainWnd, L"请点击要选择的图形", L"选择模式", MB_OK | MB_ICONINFORMATION);
         break;
     
     // 平移
