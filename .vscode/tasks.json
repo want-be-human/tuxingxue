@@ -1,0 +1,103 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "编译图形绘制软件 (MSVC)",
+            "type": "shell",
+            "command": "cl",
+            "args": [
+                "/nologo",
+                "/EHsc",
+                "/std:c++17",
+                "/DUNICODE",
+                "/D_UNICODE",
+                "/I${workspaceFolder}\\src",
+                "/Fo${workspaceFolder}\\build\\\\",
+                "/Fe${workspaceFolder}\\build\\GraphicsApp.exe",
+                "${workspaceFolder}\\src\\MainWindow.cpp",
+                "${workspaceFolder}\\src\\Canvas.cpp",
+                "${workspaceFolder}\\src\\Shape.cpp",
+                "${workspaceFolder}\\src\\DrawingAlgorithm.cpp",
+                "user32.lib",
+                "gdi32.lib",
+                "comctl32.lib"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": "$msCompile",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            }
+        },
+        {
+            "label": "编译图形绘制软件 (MinGW)",
+            "type": "shell",
+            "command": "g++",
+            "args": [
+                "-std=c++17",
+                "-DUNICODE",
+                "-D_UNICODE",
+                "-I${workspaceFolder}/src",
+                "-o",
+                "${workspaceFolder}/build/GraphicsApp.exe",
+                "${workspaceFolder}/src/MainWindow.cpp",
+                "${workspaceFolder}/src/Canvas.cpp",
+                "${workspaceFolder}/src/Shape.cpp",
+                "${workspaceFolder}/src/DrawingAlgorithm.cpp",
+                "-lgdi32",
+                "-lcomctl32",
+                "-mwindows",
+                "-static"
+            ],
+            "group": "build",
+            "problemMatcher": "$gcc",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            }
+        },
+        {
+            "label": "运行图形绘制软件",
+            "type": "shell",
+            "command": "${workspaceFolder}\\build\\GraphicsApp.exe",
+            "dependsOn": [],
+            "problemMatcher": [],
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "shared"
+            }
+        },
+        {
+            "label": "编译并运行 (MSVC)",
+            "dependsOn": [
+                "编译图形绘制软件 (MSVC)",
+                "运行图形绘制软件"
+            ],
+            "dependsOrder": "sequence",
+            "problemMatcher": []
+        },
+        {
+            "label": "清理构建文件",
+            "type": "shell",
+            "command": "Remove-Item",
+            "args": [
+                "-Path",
+                "${workspaceFolder}\\build\\*",
+                "-Recurse",
+                "-Force",
+                "-ErrorAction",
+                "SilentlyContinue"
+            ],
+            "problemMatcher": []
+        }
+    ]
+}
