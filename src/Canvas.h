@@ -88,4 +88,8 @@ private:
     std::vector<Point> GetCirclePoints(std::shared_ptr<Circle> circle);
     // 辅助函数：将矩形转换为多边形点集
     std::vector<Point> GetRectanglePoints(std::shared_ptr<class Rectangle> rect);
+    // 辅助函数：将多段线转换为多边形点集
+    std::vector<Point> GetPolylinePoints(std::shared_ptr<class Polyline> polyline);
+    // 辅助函数：将B样条曲线转换为多边形点集
+    std::vector<Point> GetBSplinePoints(std::shared_ptr<BSpline> bspline);
 };

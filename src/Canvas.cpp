@@ -579,6 +579,33 @@ std::vector<Point> Canvas::GetRectanglePoints(std::shared_ptr<class Rectangle> r
     return points;
 }
 
+std::vector<Point> Canvas::GetPolylinePoints(std::shared_ptr<class Polyline> polyline) {
+    std::vector<Point> points;
+    if (!polyline || !polyline->IsComplete()) return points;
+    
+    // 多段线本身就是点集，直接返回
+    return polyline->GetPoints();
+}
+
+std::vector<Point> Canvas::GetBSplinePoints(std::shared_ptr<BSpline> bspline) {
+    std::vector<Point> points;
+    if (!bspline || !bspline->IsComplete()) return points;
+    
+    // B样条曲线需要将控制点转换为闭合多边形
+    // 使用控制点形成的凸包作为近似多边形
+    // 这里简单地使用控制点作为多边形顶点
+    // 更精确的方法是对曲线进行采样
+    const auto& controlPoints = bspline->GetPoints();
+    if (controlPoints.size() < 3) return points;
+    
+    // 将控制点作为多边形顶点返回
+    for (const auto& pt : controlPoints) {
+        points.push_back(pt);
+    }
+    
+    return points;
+}
+
 void Canvas::CreateNewShape() {
     switch (currentMode) {
     case DrawMode::Line:
@@ -722,12 +749,50 @@ void Canvas::ClipPolygons(PolygonClipAlgorithm algorithm) {
     if (!hasClipRect) return;
     
     for (auto& shape : shapes) {
-        auto polygon = std::dynamic_pointer_cast<class Polygon>(shape);
-        if (polygon && polygon->IsComplete()) {
-            std::vector<Point> inVerts = polygon->GetVertices();
+        std::vector<Point> inVerts;
+        bool needsClipping = false;
+        
+        // 处理多边形
+        if (auto polygon = std::dynamic_pointer_cast<class Polygon>(shape)) {
+            if (polygon->IsComplete()) {
+                inVerts = polygon->GetVertices();
+                needsClipping = true;
+            }
+        }
+        // 处理圆形
+        else if (auto circle = std::dynamic_pointer_cast<Circle>(shape)) {
+            if (circle->IsComplete()) {
+                inVerts = GetCirclePoints(circle);
+                needsClipping = true;
+            }
+        }
+        // 处理矩形
+        else if (auto rect = std::dynamic_pointer_cast<class Rectangle>(shape)) {
+            if (rect->IsComplete()) {
+                inVerts = GetRectanglePoints(rect);
+                needsClipping = true;
+            }
+        }
+        // 处理多段线
+        else if (auto polyline = std::dynamic_pointer_cast<class Polyline>(shape)) {
+            if (polyline->IsComplete()) {
+                inVerts = GetPolylinePoints(polyline);
+                needsClipping = true;
+            }
+        }
+        // 处理B样条曲线
+        else if (auto bspline = std::dynamic_pointer_cast<BSpline>(shape)) {
+            if (bspline->IsComplete()) {
+                inVerts = GetBSplinePoints(bspline);
+                needsClipping = true;
+            }
+        }
+        
+        // 执行裁剪
+        if (needsClipping && inVerts.size() >= 3) {
             std::vector<Point> outVerts;
-            
             bool visible = false;
+            
             if (algorithm == PolygonClipAlgorithm::SutherlandHodgman) {
                 visible = DrawingAlgorithm::ClipPolygon_SutherlandHodgman(clipRect, inVerts, outVerts);
             }
@@ -735,8 +800,23 @@ void Canvas::ClipPolygons(PolygonClipAlgorithm algorithm) {
                 visible = DrawingAlgorithm::ClipPolygon_WeilerAtherton(clipRect, inVerts, outVerts);
             }
             
+            // 更新图形顶点
             if (visible && outVerts.size() >= 3) {
-                polygon->SetVertices(outVerts);
+                // 对于多边形，直接更新顶点
+                if (auto polygon = std::dynamic_pointer_cast<class Polygon>(shape)) {
+                    polygon->SetVertices(outVerts);
+                }
+                // 对于其他图形类型，创建新的多边形替换原图形
+                else {
+                    auto newPolygon = std::make_shared<class Polygon>();
+                    newPolygon->SetVertices(outVerts);
+                    newPolygon->Close();
+                    // 保持选中状态
+                    if (shape->IsSelected()) {
+                        newPolygon->SetSelected(true);
+                    }
+                    shape = newPolygon;
+                }
             }
         }
     }

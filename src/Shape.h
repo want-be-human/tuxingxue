@@ -211,6 +211,7 @@ public:
     bool HitTest(const Point& p, int tolerance = 5) const override;
     
     size_t GetPointCount() const;
+    const std::vector<Point>& GetPoints() const { return controlPoints; }
 };
 
 // 填充区域类(用于封闭图形的填充)
