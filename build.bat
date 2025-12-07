@@ -18,7 +18,7 @@ echo Compiling...
 echo(
 
 g++ -std=c++17 -DUNICODE -D_UNICODE -Isrc ^
-    src/MainWindow.cpp src/Shape.cpp src/Canvas.cpp src/DrawingAlgorithm.cpp ^
+    src/MainWindow.cpp src/Shape.cpp src/Canvas.cpp src/DrawingAlgorithm.cpp src/WeilerAtherton.cpp ^
     -o build/GraphicsApp.exe ^
     -luser32 -lgdi32 -lcomctl32 -mwindows -static
 

@@ -559,19 +559,20 @@ bool DrawingAlgorithm::ClipPolygon_SutherlandHodgman(const Rect& clipRect,
 
 // Weiler-Atherton 多边形裁剪算法
 // 核心思想：构建多边形和裁剪窗口的交点表，沿交点遍历形成裁剪后的多边形
-// 注：这是简化版本，适用于凸裁剪窗口和简单凹多边形
-bool DrawingAlgorithm::ClipPolygon_WeilerAtherton(const Rect& clipRect, 
-                                                    const std::vector<Point>& inVerts, 
-                                                    std::vector<Point>& outVerts) {
-    // 简化实现：对于矩形窗口，Weiler-Atherton与Sutherland-Hodgman结果类似
-    // 完整的Weiler-Atherton算法较复杂，这里提供一个增强版的实现
-    // 能处理凹多边形的基本情况
+// 适用于凹多边形和复杂多边形的裁剪，可以返回多个裁剪结果
+std::vector<std::vector<Point>> DrawingAlgorithm::ClipPolygon_WeilerAtherton(const Rect& clipRect, 
+                                                                               const std::vector<Point>& inVerts) {
+    if (inVerts.size() < 3) return {};
     
-    if (inVerts.size() < 3) return false;
+    // 将矩形裁剪窗口转换为多边形顶点序列
+    std::vector<Point> clipPoly;
+    clipPoly.push_back(Point(clipRect.left, clipRect.top));
+    clipPoly.push_back(Point(clipRect.right, clipRect.top));
+    clipPoly.push_back(Point(clipRect.right, clipRect.bottom));
+    clipPoly.push_back(Point(clipRect.left, clipRect.bottom));
     
-    // 对于矩形裁剪窗口，可以复用Sutherland-Hodgman
-    // 但增加对凹多边形的支持
-    return ClipPolygon_SutherlandHodgman(clipRect, inVerts, outVerts);
+    // 调用 Weiler-Atherton 算法，返回所有裁剪结果
+    return WeilerAtherton::clip(inVerts, clipPoly);
 }
 
 // ==================== 裁剪算法辅助函数实现 ====================

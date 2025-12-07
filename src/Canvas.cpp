@@ -748,6 +748,9 @@ void Canvas::ClipLines(LineClipAlgorithm algorithm) {
 void Canvas::ClipPolygons(PolygonClipAlgorithm algorithm) {
     if (!hasClipRect) return;
     
+    // 用于存储新创建的填充区域
+    std::vector<std::shared_ptr<Shape>> clippedShapes;
+    
     for (auto& shape : shapes) {
         std::vector<Point> inVerts;
         bool needsClipping = false;
@@ -795,30 +798,54 @@ void Canvas::ClipPolygons(PolygonClipAlgorithm algorithm) {
             
             if (algorithm == PolygonClipAlgorithm::SutherlandHodgman) {
                 visible = DrawingAlgorithm::ClipPolygon_SutherlandHodgman(clipRect, inVerts, outVerts);
+                
+                // 更新图形顶点
+                if (visible && outVerts.size() >= 3) {
+                    // 对于多边形，直接更新顶点
+                    if (auto polygon = std::dynamic_pointer_cast<class Polygon>(shape)) {
+                        polygon->SetVertices(outVerts);
+                    }
+                    // 对于其他图形类型，创建新的多边形替换原图形
+                    else {
+                        auto newPolygon = std::make_shared<class Polygon>();
+                        newPolygon->SetVertices(outVerts);
+                        newPolygon->Close();
+                        // 保持选中状态
+                        if (shape->IsSelected()) {
+                            newPolygon->SetSelected(true);
+                        }
+                        shape = newPolygon;
+                    }
+                }
             }
             else if (algorithm == PolygonClipAlgorithm::WeilerAtherton) {
-                visible = DrawingAlgorithm::ClipPolygon_WeilerAtherton(clipRect, inVerts, outVerts);
-            }
-            
-            // 更新图形顶点
-            if (visible && outVerts.size() >= 3) {
-                // 对于多边形，直接更新顶点
-                if (auto polygon = std::dynamic_pointer_cast<class Polygon>(shape)) {
-                    polygon->SetVertices(outVerts);
-                }
-                // 对于其他图形类型，创建新的多边形替换原图形
-                else {
-                    auto newPolygon = std::make_shared<class Polygon>();
-                    newPolygon->SetVertices(outVerts);
-                    newPolygon->Close();
-                    // 保持选中状态
-                    if (shape->IsSelected()) {
-                        newPolygon->SetSelected(true);
+                // Weiler-Atherton 算法：保留框内部分，用绿色填充显示
+                // 注意：WeilerAtherton 可能返回多个裁剪结果
+                auto results = DrawingAlgorithm::ClipPolygon_WeilerAtherton(clipRect, inVerts);
+                
+                // 处理所有裁剪结果
+                for (const auto& outVerts : results) {
+                    if (outVerts.size() >= 3) {
+                        // 创建绿色填充的裁剪区域（保留框内部分）
+                        COLORREF greenFillColor = RGB(0, 255, 0);  // 绿色填充
+                        auto filledRegion = std::make_shared<FilledRegion>(
+                            outVerts, FillAlgorithm::ScanLine, greenFillColor);
+                        clippedShapes.push_back(filledRegion);
+                        
+                        // 创建边框轮廓
+                        auto newPolygon = std::make_shared<class Polygon>();
+                        newPolygon->SetVertices(outVerts);
+                        newPolygon->Close();
+                        clippedShapes.push_back(newPolygon);
                     }
-                    shape = newPolygon;
                 }
             }
         }
+    }
+    
+    // 使用 Weiler-Atherton 时，添加新创建的填充区域
+    if (algorithm == PolygonClipAlgorithm::WeilerAtherton && !clippedShapes.empty()) {
+        shapes.insert(shapes.end(), clippedShapes.begin(), clippedShapes.end());
     }
 }
 

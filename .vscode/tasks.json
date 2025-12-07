@@ -18,6 +18,7 @@
                 "${workspaceFolder}\\src\\Canvas.cpp",
                 "${workspaceFolder}\\src\\Shape.cpp",
                 "${workspaceFolder}\\src\\DrawingAlgorithm.cpp",
+                "${workspaceFolder}\\src\\WeilerAtherton.cpp",
                 "user32.lib",
                 "gdi32.lib",
                 "comctl32.lib"
@@ -49,6 +50,7 @@
                 "${workspaceFolder}/src/Canvas.cpp",
                 "${workspaceFolder}/src/Shape.cpp",
                 "${workspaceFolder}/src/DrawingAlgorithm.cpp",
+                "${workspaceFolder}/src/WeilerAtherton.cpp",
                 "-lgdi32",
                 "-lcomctl32",
                 "-mwindows",

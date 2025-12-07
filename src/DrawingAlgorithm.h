@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <cmath>
 #include "Point.h"
+#include "WeilerAtherton.h"
 
 // 绘制算法枚举
 enum class LineAlgorithm {
@@ -64,9 +65,9 @@ public:
     static bool ClipPolygon_SutherlandHodgman(const Rect& clipRect, const std::vector<Point>& inVerts, std::vector<Point>& outVerts);
     
     // Weiler-Atherton 多边形裁剪算法（适用于凹多边形）
-    // 返回值：true表示有可见部分，false表示完全不可见
-    // outVerts会存储裁剪后的多边形顶点
-    static bool ClipPolygon_WeilerAtherton(const Rect& clipRect, const std::vector<Point>& inVerts, std::vector<Point>& outVerts);
+    // 返回值：裁剪后的多边形列表（可能有多个）
+    // 该算法支持返回多个裁剪结果
+    static std::vector<std::vector<Point>> ClipPolygon_WeilerAtherton(const Rect& clipRect, const std::vector<Point>& inVerts);
 
 private:
     // 画点的辅助函数
